@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">hizuke</title>
+  <desc id="description">A photograph inside a calendar, with a golden sun and green mountains on a warm ivory card.</desc>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#173C38"/>
+  <rect x="96" y="128" width="320" height="296" rx="40" fill="#F7F3E8"/>
+  <rect x="162" y="82" width="28" height="88" rx="14" fill="#F7F3E8"/>
+  <rect x="322" y="82" width="28" height="88" rx="14" fill="#F7F3E8"/>
+  <path d="M108 192H404V212H108Z" fill="#173C38"/>
+  <circle cx="332" cy="258" r="28" fill="#D8A64B"/>
+  <path d="M144 378V369Q144 366 146 363L210 289Q216 282 222 289L268 338L294 310Q300 303 306 310L366 374Q375 388 360 388H154Q144 388 144 378Z" fill="#173C38"/>
+</svg>

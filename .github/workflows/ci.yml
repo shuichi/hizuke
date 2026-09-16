@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-and-install:
+    name: ${{ matrix.os }} / Rust ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable]
+        include:
+          - os: ubuntu-latest
+            toolchain: "1.89.0"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+      - name: Check formatting
+        if: matrix.os == 'ubuntu-latest' && matrix.toolchain == 'stable'
+        run: cargo fmt --check
+      - name: Clippy
+        if: matrix.toolchain == 'stable'
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --locked
+      - name: Install and run installed command
+        run: |
+          install_temp="$RUNNER_TEMP"
+          executable=hizuke
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            install_temp="$(cygpath -u "$RUNNER_TEMP")"
+            executable=hizuke.exe
+          fi
+          install_root="$install_temp/hizuke-install"
+          cargo install --path . --locked --root "$install_root"
+          "$install_root/bin/$executable" --version
+          "$install_root/bin/$executable" --help

@@ -1,5 +1,7 @@
 # hizuke 0.2
 
+<img src="icon.svg" width="140px" style="display: block; margin: 0 auto;">
+
 画像を `YYYY-MM-DD HH.MM.SS.ext` にリネームする Rust CLI です。
 EXIF を優先し、利用できなければファイル更新日時を使います。Dropbox 風の命名規則ですが、Dropbox の内部仕様を完全に再現するものではありません。
 
@@ -29,16 +31,50 @@ IMG_1235.JPG → 2026-09-16 14.35.08 (1).JPG
 
 ## インストール
 
-Rust 1.89 以上でビルドできます。依存関係は `Cargo.lock` で固定しています。
+Rust 1.89 以上（最新の安定版を推奨）と、下記の OS 別ビルドツールを用意すると、**macOS / Windows / Linux 共通**で次のコマンドを使えます。Windows では PowerShell・コマンドプロンプトのどちらでも実行できます。
 
 ```sh
-cd /path/to/hizuke
+cargo install --git https://github.com/shuichi/hizuke.git --locked
+hizuke --help
+```
+
+GitHub からソースを取得し、実行環境の OS・CPU 向けにビルドしてインストールします。事前のクローンは不要です。`--locked` により、依存関係にはリポジトリの `Cargo.lock` を使います（[Cargo の公式説明](https://doc.rust-lang.org/cargo/commands/cargo-install.html)）。初回はソースと依存関係の取得にインターネット接続が必要です。
+
+### 初回の準備
+
+| OS | 必要なビルドツール |
+| --- | --- |
+| macOS | `xcode-select --install` を実行し、Command Line Tools のインストールを完了する |
+| Windows | Visual Studio の「C++ によるデスクトップ開発」（MSVC と Windows SDK）。Rust インストーラーの案内に従う（[公式手順](https://rust-lang.github.io/rustup/installation/windows-msvc.html)） |
+| Linux | C コンパイラーとリンカー。Ubuntu / Debian では `sudo apt update` の後に `sudo apt install build-essential curl ca-certificates`。その他のディストリビューションでは対応する開発ツールを導入する |
+
+Rust が未導入の場合、macOS / Linux では以下を実行して画面の案内に従います。
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Windows では [Rust の公式インストールページ](https://www.rust-lang.org/tools/install) から CPU に合う `rustup-init.exe` をダウンロードして実行します。通常は既定の MSVC ツールチェーンを選びます。
+
+インストール後に端末を開き直し、次の両方が実行できることを確認してから、上記の `cargo install` を実行してください。既存の Rust が 1.89 未満の場合は、rustup で導入した環境なら `rustup update stable` で更新できます。
+
+```sh
+rustc --version
+cargo --version
+```
+
+`hizuke` が見つからない場合も、まず端末を開き直してください。標準のインストール先は macOS / Linux では `~/.cargo/bin`、Windows では `%USERPROFILE%\.cargo\bin` です。このディレクトリが `PATH` に含まれている必要があります。`CARGO_HOME` やインストール先を変更している場合は、その配下の `bin` を使用します。
+
+### 取得済みのソースからインストール
+
+このリポジトリの `Cargo.toml` があるディレクトリで実行します。こちらも3つの OS で共通です。
+
+```sh
 cargo install --path . --locked
 hizuke --help
 ```
 
-同梱の `bin/hizuke` は、この実装環境でビルド・検証した macOS arm64 用バイナリです。インストールせず、プロジェクト内で `./bin/hizuke 写真フォルダ` と実行することもできます。
-他の環境ではソースからビルドしてください。Linux / Windows 用の実装と CI 設定も含みますが、ローカルでの実機検証は macOS のみです。
+CI では macOS / Linux / Windows それぞれでテスト、ソースからのインストール、インストールしたコマンドの起動を検証します。ローカルでの実機検証は macOS のみです。
 
 ### 旧名からの移行
 
@@ -207,7 +243,7 @@ cargo build --release --locked
 ```
 
 単体・CLI 結合テストで、EXIF 優先順位、更新日時、重複、衝突、取り消し、実行中断、変更検出、リンク拒否などを確認します。
-`.github/workflows/ci.yml` に macOS / Linux / Windows の検証ジョブを定義しています。
+`.github/workflows/ci.yml` に macOS / Linux / Windows のテストとインストールの検証ジョブを定義しています。
 実際の検証結果と強制終了テストの再現手順は [TESTING.md](TESTING.md) に記載しています。
 
 CLI は [clap](https://docs.rs/clap/latest/clap/) を使用しています。同時刻の大量画像の連番探索と履歴の検証は、ファイル数に対して二乗で増えないようにしています。全内容の読み取りと移動ごとの同期書き込みは維持しているため、巨大なライブラリでは時間がかかります。
