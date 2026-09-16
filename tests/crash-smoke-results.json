@@ -1,0 +1,67 @@
+[
+  {
+    "phase": "apply_staging",
+    "observed_before_sigkill": {
+      "original": 45,
+      "final": 0,
+      "staged": 3
+    },
+    "after_sigkill": {
+      "original": 45,
+      "final": 0,
+      "staged": 3
+    },
+    "restored_files": 48,
+    "bytes_and_mtimes_restored": true,
+    "status": "rolled_back"
+  },
+  {
+    "phase": "apply_finalizing",
+    "observed_before_sigkill": {
+      "original": 0,
+      "final": 3,
+      "staged": 45
+    },
+    "after_sigkill": {
+      "original": 0,
+      "final": 3,
+      "staged": 45
+    },
+    "restored_files": 48,
+    "bytes_and_mtimes_restored": true,
+    "status": "rolled_back"
+  },
+  {
+    "phase": "undo_restoring",
+    "observed_before_sigkill": {
+      "original": 3,
+      "final": 0,
+      "staged": 45
+    },
+    "after_sigkill": {
+      "original": 3,
+      "final": 0,
+      "staged": 45
+    },
+    "restored_files": 48,
+    "bytes_and_mtimes_restored": true,
+    "status": "undone"
+  },
+  {
+    "phase": "sigint_apply_staging",
+    "observed_before_sigint": {
+      "original": 45,
+      "final": 0,
+      "staged": 3
+    },
+    "after_sigint": {
+      "original": 48,
+      "final": 0,
+      "staged": 0
+    },
+    "exit_code": 130,
+    "restored_files": 48,
+    "bytes_and_mtimes_restored": true,
+    "status": "rolled_back"
+  }
+]

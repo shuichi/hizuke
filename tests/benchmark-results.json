@@ -1,0 +1,22 @@
+{
+  "scenario": "unique small files, identical mtime, same extension",
+  "files": 4000,
+  "repeats": 3,
+  "baseline": {
+    "seconds": [
+      1.662014,
+      1.657377,
+      1.737844
+    ],
+    "median_seconds": 1.662014
+  },
+  "current": {
+    "seconds": [
+      0.33322,
+      0.096485,
+      0.106033
+    ],
+    "median_seconds": 0.106033
+  },
+  "median_speedup": 15.67
+}

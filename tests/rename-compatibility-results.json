@@ -1,0 +1,51 @@
+{
+  "new_version": "hizuke 0.2.0",
+  "scenarios": [
+    {
+      "baseline": "imgrename 0.2.0",
+      "scenario": "completed_upgrade",
+      "files": 4,
+      "read_only_history_preview": true,
+      "original_names_bytes_nsmtime_inodes_restored": true,
+      "new_apply_reuses_legacy_state": true,
+      "new_state_directory_created": false
+    },
+    {
+      "baseline": "imgrename 0.2.0",
+      "scenario": "sigkill_legacy_apply_then_new_recover",
+      "files": 48,
+      "observed_before_sigkill": {
+        "original": 45,
+        "final": 0,
+        "staged": 3
+      },
+      "read_only_recovery_preview": true,
+      "original_names_bytes_nsmtime_inodes_restored": true,
+      "status": "rolled_back",
+      "new_state_directory_created": false
+    },
+    {
+      "baseline": "imgrename 0.1.0",
+      "scenario": "completed_upgrade",
+      "files": 4,
+      "read_only_history_preview": true,
+      "original_names_bytes_nsmtime_inodes_restored": true,
+      "new_apply_reuses_legacy_state": true,
+      "new_state_directory_created": false
+    },
+    {
+      "baseline": "imgrename 0.1.0",
+      "scenario": "sigkill_legacy_apply_then_new_recover",
+      "files": 48,
+      "observed_before_sigkill": {
+        "original": 45,
+        "final": 0,
+        "staged": 3
+      },
+      "read_only_recovery_preview": true,
+      "original_names_bytes_nsmtime_inodes_restored": true,
+      "status": "rolled_back",
+      "new_state_directory_created": false
+    }
+  ]
+}
