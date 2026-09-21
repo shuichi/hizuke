@@ -16,8 +16,8 @@ _hizuke() {
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" : \
 '--color=[Color policy; auto respects NO_COLOR and terminal detection]:COLOR:(auto always never)' \
-'--timezone=[Camera wall time / local mtime by default; UTC needs a valid EXIF offset]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use the system local timezone for mtime"
-utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
+'--timezone=[EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use local time for MP4 and mtime"
+utc\:"Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime"))' \
 '--duplicates=[Exact duplicates\: choose a keeper, retain all copies, or skip the group]:DUPLICATES:(ask keep-all skip)' \
 '--json[Emit JSON; suppress progress and color]' \
 '(-v --verbose)-q[Suppress routine output (questions and errors remain visible)]' \
@@ -34,7 +34,7 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \
 '--version[Print version]' \
-'::directory -- Photo directory; images stay in their current directories:_files -/' \
+'::directory -- Media directory; files stay in their current directories:_files -/' \
 ":: :_hizuke_commands" \
 "*::: :->hizuke" \
 && ret=0
@@ -46,8 +46,8 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
         case $line[2] in
             (preview)
 _arguments "${_arguments_options[@]}" : \
-'--timezone=[Camera wall time / local mtime by default; UTC needs a valid EXIF offset]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use the system local timezone for mtime"
-utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
+'--timezone=[EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use local time for MP4 and mtime"
+utc\:"Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime"))' \
 '--duplicates=[Exact duplicates\: choose a keeper, retain all copies, or skip the group]:DUPLICATES:(ask keep-all skip)' \
 '--color=[Color policy; auto respects NO_COLOR and terminal detection]:COLOR:(auto always never)' \
 '-r[Include subdirectories, excluding links and separately managed libraries]' \
@@ -59,13 +59,13 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
 '--verbose[Also show unchanged files and full diagnostic details]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
-'::directory -- Photo directory; images stay in their current directories:_files -/' \
+'::directory -- Media directory; files stay in their current directories:_files -/' \
 && ret=0
 ;;
 (plan)
 _arguments "${_arguments_options[@]}" : \
-'--timezone=[Camera wall time / local mtime by default; UTC needs a valid EXIF offset]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use the system local timezone for mtime"
-utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
+'--timezone=[EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use local time for MP4 and mtime"
+utc\:"Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime"))' \
 '--duplicates=[Exact duplicates\: choose a keeper, retain all copies, or skip the group]:DUPLICATES:(ask keep-all skip)' \
 '--color=[Color policy; auto respects NO_COLOR and terminal detection]:COLOR:(auto always never)' \
 '-r[Include subdirectories, excluding links and separately managed libraries]' \
@@ -77,13 +77,13 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
 '--verbose[Also show unchanged files and full diagnostic details]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
-'::directory -- Photo directory; images stay in their current directories:_files -/' \
+'::directory -- Media directory; files stay in their current directories:_files -/' \
 && ret=0
 ;;
 (apply)
 _arguments "${_arguments_options[@]}" : \
-'--timezone=[Camera wall time / local mtime by default; UTC needs a valid EXIF offset]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use the system local timezone for mtime"
-utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
+'--timezone=[EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use local time for MP4 and mtime"
+utc\:"Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime"))' \
 '--duplicates=[Exact duplicates\: choose a keeper, retain all copies, or skip the group]:DUPLICATES:(ask keep-all skip)' \
 '--color=[Color policy; auto respects NO_COLOR and terminal detection]:COLOR:(auto always never)' \
 '-r[Include subdirectories, excluding links and separately managed libraries]' \
@@ -99,13 +99,13 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
 '--verbose[Also show unchanged files and full diagnostic details]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
-'::directory -- Photo directory; images stay in their current directories:_files -/' \
+'::directory -- Media directory; files stay in their current directories:_files -/' \
 && ret=0
 ;;
 (rename)
 _arguments "${_arguments_options[@]}" : \
-'--timezone=[Camera wall time / local mtime by default; UTC needs a valid EXIF offset]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use the system local timezone for mtime"
-utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
+'--timezone=[EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets]:TIMEZONE:((local\:"Preserve EXIF camera wall time; use local time for MP4 and mtime"
+utc\:"Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime"))' \
 '--duplicates=[Exact duplicates\: choose a keeper, retain all copies, or skip the group]:DUPLICATES:(ask keep-all skip)' \
 '--color=[Color policy; auto respects NO_COLOR and terminal detection]:COLOR:(auto always never)' \
 '-r[Include subdirectories, excluding links and separately managed libraries]' \
@@ -121,7 +121,7 @@ utc\:"Convert EXIF with its matching offset to UTC; use UTC for mtime"))' \
 '--verbose[Also show unchanged files and full diagnostic details]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
-'::directory -- Photo directory; images stay in their current directories:_files -/' \
+'::directory -- Media directory; files stay in their current directories:_files -/' \
 && ret=0
 ;;
 (undo)

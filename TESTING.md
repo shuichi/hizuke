@@ -1,5 +1,29 @@
 # hizuke 0.2 検証記録
 
+## 警告ゼロ化の検証
+
+2026-09-21、Windows、Rust 1.98.1で実施しました。
+`AGENTS.md`に警告ゼロのルールを追加し、`src/engine.rs`の `unused_mut` と `chunks_exact_to_as_chunks` を修正しました。
+`cargo fmt --check`、`cargo clippy --locked --all-targets -- -D warnings`、`cargo build --release --locked` はすべて成功し、Rustコードのコンパイラ・Clippy警告はゼロです。
+`cargo test --locked witness` も2件成功し、記録末尾の欠損検出・修復を確認しました。全体テストとmacOS/Linux実機検証はこの修正では再実行していません。
+
+## MP4対応の追加検証
+
+2026-09-21、Windows、Rust 1.98.1で実施しました。
+
+- MP4の追加テスト9件（パーサー3件、スキャナー・CLI6件）はすべて成功しました。
+- 32/64-bitの作成日時、通常・拡張ボックス長、末尾のmoov、UTC/ローカル時刻、日時欠落・不正・切り詰め、再帰走査、重複、同名衝突、再実行、プレビュー、apply/undoによる内容・mtime保持を確認しました。
+- 仮想5 GiB動画のテストでは、動画本体を読み込まず末尾の日時へシークすることを確認しました。大量ボックスの探索上限とI/Oエラーの伝播も確認しました。
+- `cargo fmt --check`、`git diff --check`、`cargo build --release --locked --offline`、リリースバイナリのヘルプと画像プレビューは成功しました。
+- `cargo test --locked --offline --no-fail-fast` は88件成功、既存の2件が失敗しました。変更前のHEADを別ディレクトリへ展開して再実行し、同じ2件の失敗を確認しました。
+  - `persistent_fingerprint_survives_rename_but_detects_mtime_change`: テストが123 nsを期待する一方、このWindows環境では100 nsとして保存されます。
+  - `nested_collection_boundaries_prevent_stealing_images`: `Store::open(&new_child).is_err()` の既存アサーションが失敗します。
+- Clippyは今回の追加箇所に警告なし。`-D warnings`付き実行は、変更していない `src/engine.rs` の `unused_mut` と `chunks_exact_to_as_chunks` により失敗しました。
+
+MP4データはテスト内で生成したメタデータコンテナで、実カメラの動画や再生・デコードの検証ではありません。MP4対応についてのmacOS/Linux実機検証は未実施です。
+
+## 0.2の既存検証
+
 2026-09-16、macOS arm64、Rust 1.95.0 で実施しました。
 
 | 検証 | 結果 |

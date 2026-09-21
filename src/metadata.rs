@@ -1,4 +1,4 @@
-//! Read-only image discovery, strict EXIF dates, and stable streaming comparisons.
+//! Read-only media discovery, EXIF/MP4 dates, and stable streaming comparisons.
 //!
 //! The extension allowlist controls discovery, not a promise to decode every RAW
 //! container. Unsupported/malformed EXIF containers use the file modification time.
@@ -18,9 +18,9 @@ use walkdir::WalkDir;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]
 pub enum Timezone {
-    /// Preserve EXIF camera wall time; use the system local timezone for mtime.
+    /// Preserve EXIF camera wall time; use local time for MP4 and mtime.
     Local,
-    /// Convert EXIF with its matching offset to UTC; use UTC for mtime.
+    /// Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime.
     Utc,
 }
 
@@ -53,10 +53,10 @@ pub struct Scan {
 }
 
 // Case-insensitive. GIF/BMP and unsupported RAW variants use mtime when needed.
-const IMAGE_EXTENSIONS: &[&str] = &[
+const MEDIA_EXTENSIONS: &[&str] = &[
     "jpg", "jpeg", "jpe", "tif", "tiff", "heic", "heif", "png", "webp", "avif", "gif", "bmp",
     "dng", "cr2", "cr3", "crw", "nef", "nrw", "arw", "srf", "sr2", "orf", "rw2", "raf", "pef",
-    "srw", "rwl", "3fr", "fff", "iiq", "kdc", "dcr", "mos", "raw",
+    "srw", "rwl", "3fr", "fff", "iiq", "kdc", "dcr", "mos", "raw", "mp4",
 ];
 
 /// Scan a directory without modifying files or following child symlinks.
@@ -162,7 +162,7 @@ fn scan_with_workers(
             .extension()
             .and_then(|v| v.to_str())
             .unwrap_or("");
-        if !IMAGE_EXTENSIONS
+        if !MEDIA_EXTENSIONS
             .iter()
             .any(|supported| extension.eq_ignore_ascii_case(supported))
         {
@@ -474,6 +474,66 @@ fn inspect_image_with_check(
     );
     file.seek(SeekFrom::Start(0))?;
     let mut warnings = Vec::new();
+    let is_mp4 = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("mp4"));
+    let media_time = if is_mp4 {
+        read_mp4_time(&mut file, before.size, timezone, &mut warnings)?
+    } else {
+        read_exif_time(&mut file, before.size, timezone, &mut warnings)?
+    };
+    check()?;
+    let (timestamp, time_source) = match media_time {
+        Some(value) => value,
+        None => (mtime_date(before.modified, timezone)?, "mtime".to_owned()),
+    };
+    verify_stable(path, &file, &before)?;
+    Ok(ImageFile {
+        path: relative,
+        fingerprint,
+        timestamp,
+        time_source,
+        warnings,
+    })
+}
+
+fn read_mp4_time(
+    file: &mut File,
+    size: u64,
+    timezone: Timezone,
+    warnings: &mut Vec<String>,
+) -> Result<Option<(NaiveDateTime, String)>> {
+    match crate::mp4::creation_time(file, size) {
+        Ok(Some(date)) => match utc_date(date, timezone, "MP4 creation time") {
+            Ok(date) => Ok(Some((date, "MP4 creation_time".to_owned()))),
+            Err(error) => {
+                warnings.push(format!("{error}; falling back to modification time"));
+                Ok(None)
+            }
+        },
+        Ok(None) => Ok(None),
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::InvalidData | std::io::ErrorKind::UnexpectedEof
+            ) =>
+        {
+            warnings.push(format!(
+                "MP4 metadata unavailable ({error}); falling back to modification time"
+            ));
+            Ok(None)
+        }
+        Err(error) => Err(error).context("cannot read MP4 metadata"),
+    }
+}
+
+fn read_exif_time(
+    mut file: &mut File,
+    size: u64,
+    timezone: Timezone,
+    warnings: &mut Vec<String>,
+) -> Result<Option<(NaiveDateTime, String)>> {
     let mut partial_io_error = None;
     let mut reader = exif::Reader::new();
     reader.continue_on_error(true);
@@ -482,14 +542,14 @@ fn inspect_image_with_check(
     // the front. Fields outside that prefix are unavailable, with a visible warning.
     const METADATA_READ_LIMIT: u64 = 64 * 1024 * 1024;
     let mut signature = [0u8; 4];
-    let is_tiff = if before.size >= 4 {
+    let is_tiff = if size >= 4 {
         file.read_exact(&mut signature)?;
         signature == *b"II\x2a\x00" || signature == *b"MM\x00\x2a"
     } else {
         false
     };
     file.seek(SeekFrom::Start(0))?;
-    let parsed = if is_tiff && before.size > METADATA_READ_LIMIT {
+    let parsed = if is_tiff && size > METADATA_READ_LIMIT {
         let mut prefix = Vec::new();
         let mut limited = ReadBudget { inner: &mut file, remaining: METADATA_READ_LIMIT, hit: false };
         limited.read_to_end(&mut prefix)?;
@@ -515,12 +575,11 @@ fn inspect_image_with_check(
                 }
             })
         });
-    check()?;
     if let Some(error) = partial_io_error {
         bail!("EXIF read failed: {error}");
     }
     let exif_time = match parsed {
-        Ok(exif) => select_exif_time(&exif, timezone, &mut warnings),
+        Ok(exif) => select_exif_time(&exif, timezone, warnings),
         Err(exif::Error::Io(error)) if error.kind() != std::io::ErrorKind::UnexpectedEof => {
             return Err(error).context("cannot read EXIF data");
         }
@@ -532,18 +591,7 @@ fn inspect_image_with_check(
             None
         }
     };
-    let (timestamp, time_source) = match exif_time {
-        Some(value) => value,
-        None => (mtime_date(before.modified, timezone)?, "mtime".to_owned()),
-    };
-    verify_stable(path, &file, &before)?;
-    Ok(ImageFile {
-        path: relative,
-        fingerprint,
-        timestamp,
-        time_source,
-        warnings,
-    })
+    Ok(exif_time)
 }
 
 fn select_exif_time(
@@ -679,16 +727,27 @@ fn mtime_date(time: SystemTime, timezone: Timezone) -> Result<NaiveDateTime> {
     let (seconds, nanos) = epoch_parts(time)?;
     let date =
         chrono::DateTime::<Utc>::from_timestamp(seconds, nanos).context("mtime is out of range")?;
+    utc_date(date, timezone, "mtime")
+}
+
+fn utc_date(
+    date: chrono::DateTime<Utc>,
+    timezone: Timezone,
+    source: &str,
+) -> Result<NaiveDateTime> {
     let date = match timezone {
         Timezone::Utc => date.naive_utc(),
         Timezone::Local => {
             let offset = date.with_timezone(&Local).offset().local_minus_utc();
             date.naive_utc()
                 .checked_add_signed(Duration::seconds(i64::from(offset)))
-                .context("local mtime is out of range")?
+                .with_context(|| format!("local {source} is out of range"))?
         }
     };
-    ensure!(valid_year(date), "mtime year must be between 0001 and 9999");
+    ensure!(
+        valid_year(date),
+        "{source} year must be between 0001 and 9999"
+    );
     Ok(date)
 }
 

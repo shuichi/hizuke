@@ -3,7 +3,7 @@ name = "hizuke"
 version = "0.2.0"
 edition = "2024"
 rust-version = "1.89"
-description = "Careful EXIF-first image renaming with duplicate decisions and recoverable transactions"
+description = "Metadata-first photo and MP4 renaming with duplicate decisions and recoverable transactions"
 license = "MIT"
 
 [dependencies]

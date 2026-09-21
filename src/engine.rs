@@ -844,7 +844,7 @@ fn read_witness(directory: &Path) -> Result<Vec<String>> {
     let mut bytes = Vec::new();
     open_regular(&path, false)?.read_to_end(&mut bytes)?;
     let mut proofs = Vec::new();
-    for (index, frame) in bytes.chunks_exact(WITNESS_BYTES).enumerate() {
+    for (index, frame) in bytes.as_chunks::<WITNESS_BYTES>().0.iter().enumerate() {
         crate::control::check_cancelled()?;
         ensure!(
             frame[20] == b' '
@@ -1389,12 +1389,14 @@ fn verify_components(root: &Path, path: &Path, allow_missing_leaf: bool) -> Resu
 }
 
 fn ensure_directory(path: &Path) -> Result<()> {
-    let mut builder = fs::DirBuilder::new();
+    let builder = fs::DirBuilder::new();
     #[cfg(unix)]
-    {
+    let builder = {
         use std::os::unix::fs::DirBuilderExt;
+        let mut builder = builder;
         builder.mode(0o700);
-    }
+        builder
+    };
     match builder.create(path) {
         Ok(()) => {
             sync_directory(path.parent().context("directory has no parent")?)?;

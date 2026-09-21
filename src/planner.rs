@@ -61,6 +61,7 @@ pub struct PlanSummary {
     pub skipped_duplicates: usize,
     pub awaiting_choice: usize,
     pub exif_dates: usize,
+    pub mp4_dates: usize,
     pub mtime_dates: usize,
     pub total_bytes: u64,
     pub quarantined_bytes: u64,
@@ -264,6 +265,8 @@ pub fn build_plan(
         }
         if file.time_source == "mtime" {
             plan.summary.mtime_dates += 1;
+        } else if file.time_source.starts_with("MP4 ") {
+            plan.summary.mp4_dates += 1;
         } else {
             plan.summary.exif_dates += 1;
         }

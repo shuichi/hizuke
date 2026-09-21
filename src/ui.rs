@@ -139,13 +139,13 @@ impl Output {
         }
         if !self.verbose {
             for (warning, count) in warning_counts {
-                writeln!(out, "warning: {} ({count} image(s))", safe_text(warning))?;
+                writeln!(out, "warning: {} ({count} file(s))", safe_text(warning))?;
             }
         }
         let s = &plan.summary;
         writeln!(
             out,
-            "\n{} image(s) · {} · {} rename · {} archive · {} unchanged · {} skipped",
+            "\n{} file(s) · {} · {} rename · {} archive · {} unchanged · {} skipped",
             plan.scanned,
             human_bytes(s.total_bytes),
             s.rename,
@@ -155,8 +155,9 @@ impl Output {
         )?;
         writeln!(
             out,
-            "Dates: {} EXIF / {} mtime. Duplicates: {} group(s), {} awaiting choice.",
+            "Dates: {} EXIF / {} MP4 / {} mtime. Duplicates: {} group(s), {} awaiting choice.",
             s.exif_dates,
+            s.mp4_dates,
             s.mtime_dates,
             plan.duplicates.len(),
             plan.pending_groups

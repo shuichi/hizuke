@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added MP4 discovery and movie-header creation dates (32/64-bit `mvhd`), local/UTC conversion, and mtime fallback without external video tools.
+- Added MP4 date counts to preview/JSON summaries and documented MP4 timestamp semantics.
+
 ## 0.2.0
 
 - Renamed the project, executable, crate, documentation, and shell completions to `hizuke`.

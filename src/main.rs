@@ -16,8 +16,8 @@ use ui::{Input, Output, interactive, write_json};
     version,
     subcommand_precedence_over_arg = true,
     override_usage = "hizuke [OPTIONS] [DIRECTORY]\n       hizuke <COMMAND> [OPTIONS]",
-    about = "Rename photos with confidence. EXIF first. Originals recoverable.",
-    long_about = "Rename images to YYYY-MM-DD HH.MM.SS.ext. Just run hizuke in your photo directory: review the plan, choose among exact duplicates, and confirm. Outside a terminal, the default is a read-only preview.",
+    about = "Rename photos and MP4 videos. Metadata first. Originals recoverable.",
+    long_about = "Rename photos and MP4 videos to YYYY-MM-DD HH.MM.SS.ext. Just run hizuke in your media directory: review the plan, choose among exact duplicates, and confirm. Outside a terminal, the default is a read-only preview.",
     after_help = "Examples:\n  hizuke ./photos             Review and rename interactively\n  hizuke                      Use the current directory\n  hizuke ./photos --dry-run    Preview without changes\n  hizuke apply ./photos -y --duplicates keep-all\n  hizuke undo ./photos         Restore original names\n\nDefaults: current directory, no recursion, camera wall time, ask about duplicates, no deletion.\nA directory named like a command can be passed as ./preview or after --."
 )]
 struct Cli {
@@ -57,13 +57,13 @@ enum Commands {
 
 #[derive(Args)]
 struct ScanArgs {
-    /// Photo directory; images stay in their current directories
+    /// Media directory; files stay in their current directories
     #[arg(default_value = ".", value_hint = ValueHint::DirPath)]
     directory: PathBuf,
     /// Include subdirectories, excluding links and separately managed libraries
     #[arg(short, long)]
     recursive: bool,
-    /// Camera wall time / local mtime by default; UTC needs a valid EXIF offset
+    /// EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets
     #[arg(long, value_enum, default_value = "local")]
     timezone: Timezone,
     /// Exact duplicates: choose a keeper, retain all copies, or skip the group
@@ -252,7 +252,7 @@ fn scan_and_run(
         }
     }
     let scan = {
-        let progress = output.progress("Reading images and capture dates");
+        let progress = output.progress("Reading photos, MP4 videos, and dates");
         metadata::scan_with_progress(
             &args.directory,
             args.recursive,
@@ -312,7 +312,7 @@ fn scan_and_run(
         input,
     )?;
     {
-        let progress = output.progress("Checking that images are unchanged");
+        let progress = output.progress("Checking that files are unchanged");
         for (index, image) in scan.images.iter().enumerate() {
             ensure!(
                 metadata::fingerprint(&scan.root.join(&image.path))? == image.fingerprint,
@@ -323,7 +323,7 @@ fn scan_and_run(
         }
     }
     let transaction = {
-        let progress = output.progress("Renaming images");
+        let progress = output.progress("Renaming files");
         engine::apply_with_progress(&scan.root, &plan.operations, &|done, total| {
             progress.update(done, total)
         })?

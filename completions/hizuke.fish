@@ -27,8 +27,8 @@ end
 complete -c hizuke -n "__fish_hizuke_needs_command" -l color -d 'Color policy; auto respects NO_COLOR and terminal detection' -r -f -a "auto\t''
 always\t''
 never\t''"
-complete -c hizuke -n "__fish_hizuke_needs_command" -l timezone -d 'Camera wall time / local mtime by default; UTC needs a valid EXIF offset' -r -f -a "local\t'Preserve EXIF camera wall time; use the system local timezone for mtime'
-utc\t'Convert EXIF with its matching offset to UTC; use UTC for mtime'"
+complete -c hizuke -n "__fish_hizuke_needs_command" -l timezone -d 'EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets' -r -f -a "local\t'Preserve EXIF camera wall time; use local time for MP4 and mtime'
+utc\t'Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime'"
 complete -c hizuke -n "__fish_hizuke_needs_command" -l duplicates -d 'Exact duplicates: choose a keeper, retain all copies, or skip the group' -r -f -a "ask\t''
 keep-all\t''
 skip\t''"
@@ -49,8 +49,8 @@ complete -c hizuke -n "__fish_hizuke_needs_command" -a "recover" -d 'Preview and
 complete -c hizuke -n "__fish_hizuke_needs_command" -a "history" -d 'Read transaction history; --transaction shows the exact file mapping'
 complete -c hizuke -n "__fish_hizuke_needs_command" -a "completions" -d 'Generate shell completions to standard output'
 complete -c hizuke -n "__fish_hizuke_needs_command" -a "help" -d 'Print this message or the help of the given subcommand(s)'
-complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -l timezone -d 'Camera wall time / local mtime by default; UTC needs a valid EXIF offset' -r -f -a "local\t'Preserve EXIF camera wall time; use the system local timezone for mtime'
-utc\t'Convert EXIF with its matching offset to UTC; use UTC for mtime'"
+complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -l timezone -d 'EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets' -r -f -a "local\t'Preserve EXIF camera wall time; use local time for MP4 and mtime'
+utc\t'Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime'"
 complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -l duplicates -d 'Exact duplicates: choose a keeper, retain all copies, or skip the group' -r -f -a "ask\t''
 keep-all\t''
 skip\t''"
@@ -62,8 +62,8 @@ complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -l json -d 'Emit 
 complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -s q -l quiet -d 'Suppress routine output (questions and errors remain visible)'
 complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -s v -l verbose -d 'Also show unchanged files and full diagnostic details'
 complete -c hizuke -n "__fish_hizuke_using_subcommand preview" -s h -l help -d 'Print help (see more with \'--help\')'
-complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -l timezone -d 'Camera wall time / local mtime by default; UTC needs a valid EXIF offset' -r -f -a "local\t'Preserve EXIF camera wall time; use the system local timezone for mtime'
-utc\t'Convert EXIF with its matching offset to UTC; use UTC for mtime'"
+complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -l timezone -d 'EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets' -r -f -a "local\t'Preserve EXIF camera wall time; use local time for MP4 and mtime'
+utc\t'Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime'"
 complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -l duplicates -d 'Exact duplicates: choose a keeper, retain all copies, or skip the group' -r -f -a "ask\t''
 keep-all\t''
 skip\t''"
@@ -75,8 +75,8 @@ complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -l json -d 'Emit JSO
 complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -s q -l quiet -d 'Suppress routine output (questions and errors remain visible)'
 complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -s v -l verbose -d 'Also show unchanged files and full diagnostic details'
 complete -c hizuke -n "__fish_hizuke_using_subcommand plan" -s h -l help -d 'Print help (see more with \'--help\')'
-complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -l timezone -d 'Camera wall time / local mtime by default; UTC needs a valid EXIF offset' -r -f -a "local\t'Preserve EXIF camera wall time; use the system local timezone for mtime'
-utc\t'Convert EXIF with its matching offset to UTC; use UTC for mtime'"
+complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -l timezone -d 'EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets' -r -f -a "local\t'Preserve EXIF camera wall time; use local time for MP4 and mtime'
+utc\t'Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime'"
 complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -l duplicates -d 'Exact duplicates: choose a keeper, retain all copies, or skip the group' -r -f -a "ask\t''
 keep-all\t''
 skip\t''"
@@ -90,8 +90,8 @@ complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -l json -d 'Emit JS
 complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -s q -l quiet -d 'Suppress routine output (questions and errors remain visible)'
 complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -s v -l verbose -d 'Also show unchanged files and full diagnostic details'
 complete -c hizuke -n "__fish_hizuke_using_subcommand apply" -s h -l help -d 'Print help (see more with \'--help\')'
-complete -c hizuke -n "__fish_hizuke_using_subcommand rename" -l timezone -d 'Camera wall time / local mtime by default; UTC needs a valid EXIF offset' -r -f -a "local\t'Preserve EXIF camera wall time; use the system local timezone for mtime'
-utc\t'Convert EXIF with its matching offset to UTC; use UTC for mtime'"
+complete -c hizuke -n "__fish_hizuke_using_subcommand rename" -l timezone -d 'EXIF camera time / local MP4 and mtime by default; UTC uses EXIF offsets' -r -f -a "local\t'Preserve EXIF camera wall time; use local time for MP4 and mtime'
+utc\t'Convert EXIF with its matching offset to UTC; use UTC for MP4 and mtime'"
 complete -c hizuke -n "__fish_hizuke_using_subcommand rename" -l duplicates -d 'Exact duplicates: choose a keeper, retain all copies, or skip the group' -r -f -a "ask\t''
 keep-all\t''
 skip\t''"
