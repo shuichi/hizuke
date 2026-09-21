@@ -288,6 +288,65 @@ impl Snapshot {
     }
 }
 
+#[cfg(windows)]
+#[derive(Debug, PartialEq, Eq)]
+enum WindowsFileIdentity {
+    Extended { volume: u64, index: [u8; 16] },
+    Basic { volume: u32, index: u64 },
+}
+
+#[cfg(windows)]
+fn windows_file_identity(file: &File) -> Result<WindowsFileIdentity> {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Foundation::{
+        ERROR_INVALID_FUNCTION, ERROR_INVALID_PARAMETER, ERROR_NOT_SUPPORTED,
+    };
+    use windows_sys::Win32::Storage::FileSystem::{
+        BY_HANDLE_FILE_INFORMATION, FILE_ID_INFO, FileIdInfo, GetFileInformationByHandle,
+        GetFileInformationByHandleEx,
+    };
+
+    // Use all 128 bits where supported (required to distinguish ReFS files).
+    // Keep both compared handles open: identifiers can be reused after closing.
+    // https://learn.microsoft.com/windows/win32/api/winbase/ns-winbase-file_id_info
+    let mut info = FILE_ID_INFO::default();
+    // SAFETY: file owns a live handle, and info is a correctly sized/aligned
+    // FILE_ID_INFO output buffer valid for the duration of this synchronous call.
+    let success = unsafe {
+        GetFileInformationByHandleEx(
+            file.as_raw_handle(),
+            FileIdInfo,
+            std::ptr::from_mut(&mut info).cast(),
+            std::mem::size_of::<FILE_ID_INFO>() as u32,
+        )
+    };
+    if success != 0 {
+        return Ok(WindowsFileIdentity::Extended {
+            volume: info.VolumeSerialNumber,
+            index: info.FileId.Identifier,
+        });
+    }
+    let error = std::io::Error::last_os_error();
+    if !matches!(
+        error.raw_os_error().map(|code| code as u32),
+        Some(ERROR_INVALID_FUNCTION | ERROR_INVALID_PARAMETER | ERROR_NOT_SUPPORTED)
+    ) {
+        return Err(error).context("cannot read Windows file identity");
+    }
+
+    // Filesystems that do not expose FileIdInfo can still provide a 64-bit ID.
+    // Other failures must propagate; timestamps alone cannot prove identity.
+    let mut info = BY_HANDLE_FILE_INFORMATION::default();
+    // SAFETY: file owns a live handle and info is the required output structure.
+    if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut info) } == 0 {
+        return Err(std::io::Error::last_os_error()).context("cannot read Windows file identity");
+    }
+    Ok(WindowsFileIdentity::Basic {
+        volume: info.dwVolumeSerialNumber,
+        index: (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow),
+    })
+}
+
 fn open_regular(path: &Path) -> Result<(File, Snapshot)> {
     let path_meta =
         fs::symlink_metadata(path).with_context(|| format!("cannot inspect {}", path.display()))?;
@@ -303,6 +362,12 @@ fn open_regular(path: &Path) -> Result<(File, Snapshot)> {
     {
         use std::os::unix::fs::OpenOptionsExt;
         options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_OPEN_REPARSE_POINT;
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
     }
     let file = options
         .open(path)
@@ -330,6 +395,18 @@ fn verify_stable(path: &Path, file: &File, before: &Snapshot) -> Result<()> {
         "file changed while reading; retry when files are stable: {}",
         path.display()
     );
+    #[cfg(windows)]
+    {
+        // Creation/last-write times can be identical for different files. Compare
+        // the retained read handle with a fresh, non-symlink handle at this path.
+        let (current, current_snapshot) = open_regular(path)?;
+        ensure!(
+            *before == current_snapshot
+                && windows_file_identity(file)? == windows_file_identity(&current)?,
+            "file was replaced while reading: {}",
+            path.display()
+        );
+    }
     Ok(())
 }
 
@@ -981,6 +1058,51 @@ mod tests {
         fs::rename(&path, dir.path().join("old.jpg")).unwrap();
         fs::write(&path, b"after").unwrap();
         assert!(verify_stable(&path, &file, &before).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn replacement_with_identical_contents_and_timestamps_is_detected() {
+        use std::os::windows::fs::FileTimesExt;
+
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("file.jpg");
+        fs::write(&path, b"same contents").unwrap();
+        let (file, before) = open_regular(&path).unwrap();
+        verify_stable(&path, &file, &before).unwrap();
+        fs::rename(&path, dir.path().join("original.jpg")).unwrap();
+        fs::write(&path, b"same contents").unwrap();
+        let replacement = OpenOptions::new().write(true).open(&path).unwrap();
+        replacement
+            .set_times(
+                fs::FileTimes::new()
+                    .set_created(before.created.unwrap())
+                    .set_modified(before.modified),
+            )
+            .unwrap();
+        drop(replacement);
+
+        // Force the metadata collision instead of depending on clock resolution
+        // or Windows file-system timestamp caching to reproduce the CI failure.
+        let at_path = Snapshot::from_metadata(&fs::symlink_metadata(&path).unwrap()).unwrap();
+        assert_eq!(before, at_path);
+        assert!(verify_stable(&path, &file, &before).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_file_identity_accepts_renames_and_hard_links() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("file.jpg");
+        let renamed = dir.path().join("renamed.jpg");
+        let alias = dir.path().join("alias.jpg");
+        fs::write(&path, b"same file").unwrap();
+        let (file, before) = open_regular(&path).unwrap();
+        verify_stable(&path, &file, &before).unwrap();
+        fs::rename(&path, &renamed).unwrap();
+        verify_stable(&renamed, &file, &before).unwrap();
+        fs::hard_link(&renamed, &alias).unwrap();
+        verify_stable(&alias, &file, &before).unwrap();
     }
 
     #[test]

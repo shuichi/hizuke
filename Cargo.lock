@@ -352,6 +352,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "walkdir",
+ "windows-sys",
 ]
 
 [[package]]
