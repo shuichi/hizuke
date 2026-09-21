@@ -989,15 +989,25 @@ mod tests {
         let first = dir.path().join("first.jpg");
         let second = dir.path().join("second.jpg");
         fs::write(&first, b"photo").unwrap();
+        // Windows timestamps have 100 ns resolution. Use representable values
+        // on both sides of the rename, then change only the subsecond component.
+        let initial_mtime = filetime::FileTime::from_unix_time(1_600_000_000, 123_456_700);
+        filetime::set_file_mtime(&first, initial_mtime).unwrap();
         let before = fingerprint(&first).unwrap();
+        assert_eq!(before.modified_secs, 1_600_000_000);
+        assert_eq!(before.modified_nanos, 123_456_700);
         fs::rename(&first, &second).unwrap();
         assert_eq!(before, fingerprint(&second).unwrap());
-        filetime::set_file_mtime(&second, filetime::FileTime::from_unix_time(0, 123)).unwrap();
+        filetime::set_file_mtime(
+            &second,
+            filetime::FileTime::from_unix_time(1_600_000_000, 123_456_800),
+        )
+        .unwrap();
         let after = fingerprint(&second).unwrap();
         assert_ne!(before, after);
         assert_eq!(before.sha256, after.sha256);
-        assert_eq!(after.modified_secs, 0);
-        assert_eq!(after.modified_nanos, 123);
+        assert_eq!(after.modified_secs, before.modified_secs);
+        assert_eq!(after.modified_nanos, 123_456_800);
     }
 
     #[test]

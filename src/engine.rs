@@ -1543,10 +1543,14 @@ mod tests {
         fs::write(root.join(name), contents).unwrap();
     }
     fn operation(root: &Path, source: &str, target: Option<&str>) -> Operation {
+        // Match the scanner/planner's normalized, native path separators.
+        let source: PathBuf = Path::new(source).components().collect();
+        let target = target.map(|path| Path::new(path).components().collect());
+        let expected = fingerprint(&root.join(&source)).unwrap();
         Operation {
-            source: source.into(),
-            target: target.map(Into::into),
-            expected: fingerprint(&root.join(source)).unwrap(),
+            source,
+            target,
+            expected,
         }
     }
     fn bytes(root: &Path, name: &str) -> Vec<u8> {
@@ -1897,13 +1901,28 @@ mod tests {
         fs::create_dir(&child).unwrap();
         put(&child, "a.jpg", b"original");
         drop(Store::open(&child).unwrap());
+        // Establish parent ownership explicitly, not as a side effect of an
+        // apply attempt that is expected to fail.
+        drop(Store::open(parent.path()).unwrap());
         let operation = operation(parent.path(), "child/a.jpg", Some("child/b.jpg"));
-        assert!(apply(parent.path(), &[operation]).is_err());
+        let error = apply(parent.path(), &[operation]).unwrap_err();
+        assert!(
+            error.to_string().contains("separate hizuke collection"),
+            "{error:#}"
+        );
         assert_eq!(bytes(&child, "a.jpg"), b"original");
-        assert!(apply(&child, &[self::operation(&child, "a.jpg", Some("b.jpg"))]).is_ok());
+        assert!(!child.join("b.jpg").exists());
+        apply(&child, &[self::operation(&child, "a.jpg", Some("b.jpg"))]).unwrap();
+        assert_eq!(bytes(&child, "b.jpg"), b"original");
         let new_child = parent.path().join("new-child");
         fs::create_dir(&new_child).unwrap();
-        assert!(Store::open(&new_child).is_err());
+        let error = Store::open(&new_child)
+            .err()
+            .expect("an unmanaged child must not be adopted beneath a managed parent");
+        assert!(
+            error.to_string().contains("belongs to the collection at"),
+            "{error:#}"
+        );
         assert!(!new_child.join(STATE_DIR).exists());
     }
 
@@ -2150,12 +2169,14 @@ mod tests {
         fs::create_dir(&child).unwrap();
         fs::create_dir(child.join(LEGACY_STATE_DIR)).unwrap();
         put(&child, "a.jpg", b"original");
+        let error = apply(
+            root.path(),
+            &[operation(root.path(), "child/a.jpg", Some("child/b.jpg"))],
+        )
+        .unwrap_err();
         assert!(
-            apply(
-                root.path(),
-                &[operation(root.path(), "child/a.jpg", Some("child/b.jpg"))]
-            )
-            .is_err()
+            error.to_string().contains("separate hizuke collection"),
+            "{error:#}"
         );
         assert!(apply(&child, &[operation(&child, "a.jpg", Some("b.jpg"))]).is_ok());
         let fresh = TempDir::new().unwrap();
