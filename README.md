@@ -315,7 +315,7 @@ cargo build --release --locked
 
 単体テストと CLI の結合テストでは、EXIF と MP4 の日時、更新日時への切り替え、重複、同名ファイル、取り消し、中断からの復旧、変更の検出、リンクの拒否などを確認します。CI の設定は [.github/workflows/ci.yml](.github/workflows/ci.yml) にあり、macOS・Linux・Windows でテストとインストールを検証します。
 
-実際の検証結果と強制終了テストの再現手順は [TESTING.md](TESTING.md) を参照してください。CLI の引数解析には [clap](https://docs.rs/clap/latest/clap/) を使用しています。
+CLI の引数解析には [clap](https://docs.rs/clap/latest/clap/) を使用しています。
 
 ## ライセンス
 
